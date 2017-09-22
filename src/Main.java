@@ -39,8 +39,8 @@ public class Main extends Application
     Button btn1 = new Button();
     btn1.setGraphic(new ImageView(new Image(getClass().getResourceAsStream("resource/a.png"))));
     btn1.setPadding(new Insets(2,2,2,2));
-    btn1.setOnMouseDragged(this::handleClick);
-    btn1.setOnMouseClicked(this::handleDragged);
+//    btn1.setOnMouseDragged(this::handleClick);
+//    btn1.setOnMouseClicked(this::handleDragged);
 
 
     hbox.setPrefWidth(WINDOW_WIDTH);
@@ -56,6 +56,7 @@ public class Main extends Application
     stage.setScene(scene);
     stage.show();
   }
+
 
   public void handleClick(MouseEvent event)
   {
