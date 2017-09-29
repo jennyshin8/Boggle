@@ -36,7 +36,7 @@ public class Dictionary
     }
   }
 
-  protected void findWord(String findingWord)
+  protected boolean findWord(String findingWord)
   {
     // Read input to find a word
 //    System.out.println("Enter your word: ");
@@ -59,8 +59,7 @@ public class Dictionary
 
     while (!found)
     {
-      System.out.println("****************************");
-      System.out.println("w : " + dictionary.get(pivot) + " , pivot : " + pivot);
+      System.out.println(" -> " + dictionary.get(pivot) + " , pivot : " + pivot);
 
       for (int i = 0; i < idx; i++)
       {
@@ -77,8 +76,6 @@ public class Dictionary
             System.out.println("****************************");
             System.out.println("wordList (" + (pivot+1)+ ") " + dictionary.get(pivot));
             found = true;
-            Controller.setScore(findingWord.length()-2);
-            if(findingWord.length() >= 3) System.out.println("SCORE " + Controller.score + "\n");
             break;
           }
           else continue;
@@ -108,10 +105,12 @@ public class Dictionary
       // if there is no word that user is looking for,
       if (noValue)
       {
-        System.out.println("There is no " + findingWord + " in dictionary..\n");
+        System.out.println("Sorry but no " + findingWord + " in dictionary...\n");
         break;
       }
     }
+
+    return found;
   }
 
 }

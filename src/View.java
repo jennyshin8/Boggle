@@ -8,7 +8,6 @@ import javafx.scene.control.Button;
 import javafx.scene.effect.SepiaTone;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
-import javafx.scene.input.DragEvent;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
@@ -19,50 +18,75 @@ import javafx.scene.text.Text;
 import javafx.scene.text.TextAlignment;
 import javafx.stage.Stage;
 
+import java.util.ArrayList;
+import java.util.Stack;
+
 
 /**
  * Created by jh on 9/23/17.
  */
 public class View extends Application
 {
-  private final int WINDOW_WIDTH = 500;
-  private final int WINDOW_HEIGHT = 500;
-  private Scene scene = new Scene(new Group());
+  private static GameTimer gameTimer;
+  private static final int WINDOW_WIDTH = 500;
+  private static final int WINDOW_HEIGHT = 500;
+  private static Scene scene = new Scene(new Group());
 
-  private VBox vbox = new VBox();
+  private static VBox vbox = new VBox();
   ///////////// Header - Score & Time /////////////
-  private HBox header = new HBox();
-  private HBox header2 = new HBox();
+  private static HBox header = new HBox();
+  private static HBox header2 = new HBox();
 
-  private Text time = new Text();
-  private Text time2 = new Text();
-  private Text score = new Text();
-  private Text score2 = new Text();
+  private static Text timeL = new Text();
+  public static Text timeV = new Text();
+  private static Text scoreL = new Text();
+  private static Text scoreV = new Text();
 
   //////////// Board  - (n x n) Board ////////////
-  private HBox r1 = new HBox();
-  private HBox r2 = new HBox();
-  private HBox r3 = new HBox();
-  private HBox r4 = new HBox();
-  private HBox r5 = new HBox();
+  private static HBox r1 = new HBox();
+  private static HBox r2 = new HBox();
+  private static HBox r3 = new HBox();
+  private static HBox r4 = new HBox();
+  private static HBox r5 = new HBox();
 
   //////// Footer - Not acceptable words /////////
-  private HBox footer = new HBox();
-  private HBox footer2 = new HBox();
+  private static HBox footer = new HBox();
+  private static HBox footer2 = new HBox();
 
-  private Text footerDesc = new Text();
-  private Text notAllowed = new Text();
+  private static Text footerDesc = new Text();
+  private static Text notAllowed = new Text();
 
   private static int num;
+  private static String[][] playboard;
 
-  public View() { }
-  public View(int n)
+  private static Stack<Node> stacked = new Stack<>();
+  private static String draggedWord = "";
+  private static Node startNode;
+
+
+
+  public View()
   {
-    this.num = n;
   }
 
+  public View(int n, String[][] boggleArr)
+  {
+    this.num = n;
+    this.playboard = boggleArr;
+  }
+
+
   @Override
-  public void init() throws Exception { super.init();}
+  public void init() throws Exception
+  {
+    super.init();
+  }
+
+
+  @Override
+  public void stop() {
+    System.out.println("Stop");
+  }
 
   @Override
   public void start(Stage stage)
@@ -77,38 +101,51 @@ public class View extends Application
 
     alignVBox();
 
+    timeV.setWrappingWidth(100);
+    scoreV.setTextAlignment(TextAlignment.RIGHT);
+    scoreV.setWrappingWidth(100);
+
+    gameTimer = new GameTimer();
+    gameTimer.start();
+
     ((Group) scene.getRoot()).getChildren().addAll(vbox);
 
     stage.setScene(scene);
     stage.show();
+
   }
 
 
   private void setHeader()
   {
-    time.setFont(Font.font("Arial Red", FontWeight.BLACK, 20));
-    time.setTextAlignment(TextAlignment.LEFT);
-    time.setText("Time");
+    timeL.setFont(Font.font("Arial Red", FontWeight.BLACK, 20));
+    timeL.setTextAlignment(TextAlignment.LEFT);
+    timeL.setText("Time");
 
-    score.setFont(Font.font("Arial Red", FontWeight.BLACK, 20));
-    score.setTextAlignment(TextAlignment.LEFT);
-    score.setText("Score");
+    scoreL.setFont(Font.font("Arial Red", FontWeight.BLACK, 20));
+    scoreL.setTextAlignment(TextAlignment.LEFT);
+    scoreL.setText("Score");
 
-    time2.setFont(Font.font("Arial Red", FontWeight.BLACK, 20));
-    time2.setTextAlignment(TextAlignment.LEFT);
-    time2.setText("2:55");
+    timeV.setFont(Font.font("Arial Red", FontWeight.BLACK, 20));
+    timeV.setTextAlignment(TextAlignment.LEFT);
+    timeV.prefWidth(20);
+    timeV.setText("");
 
-    score2.setFont(Font.font("Arial Red", FontWeight.BLACK, 20));
-    score2.setTextAlignment(TextAlignment.RIGHT);
-    score2.setText("2");
+    scoreV.setFont(Font.font("Arial Red", FontWeight.BLACK, 20));
+    scoreV.setTextAlignment(TextAlignment.RIGHT);
+    scoreV.setText("0");
 
-    header.getChildren().add(time);
+    header.setAlignment(Pos.BASELINE_LEFT);
+    header.setPrefWidth(WINDOW_WIDTH);
+    header.getChildren().add(timeL);
     header.setSpacing(370);
-    header.getChildren().add(score);
+    header.getChildren().add(scoreL);
 
-    header2.getChildren().add(time2);
-    header2.setSpacing(413);
-    header2.getChildren().add(score2);
+    header2.setAlignment(Pos.BASELINE_LEFT);
+    header2.setPrefWidth(WINDOW_WIDTH);
+    header2.getChildren().addAll(timeV);
+    header2.setSpacing(271);
+    header2.getChildren().add(scoreV);
   }
 
   private void setBoard(int n)
@@ -120,10 +157,10 @@ public class View extends Application
       for (int c = 0; c < n; c++)
       {
         Button btn = new Button();
-        btn.setGraphic(new ImageView(new Image(getClass().getResourceAsStream("resource/" + Controller.playBoard[r][c] + ".png"))));
-        btn.setId(Controller.playBoard[r][c]);
+        btn.setGraphic(new ImageView(new Image(getClass().getResourceAsStream("resource/" + playboard[r][c] + ".png"))));
+        btn.setId(playboard[r][c]);
         btn.setPadding(new Insets(2, 2, 2, 2));
-        btn.setOnMouseClicked(this::handleClick);
+        //btn.setOnMouseClicked(this::handleClick);
 
         btn.setOnDragDetected(this::handleDetected);
         btn.setOnMouseDragOver(this::handleDragOver);
@@ -133,7 +170,7 @@ public class View extends Application
       }
     }
 
-    for(int i = 0; i < n; i++)
+    for (int i = 0; i < n; i++)
     {
       tmp[i].setPrefWidth(WINDOW_WIDTH);
       tmp[i].setPrefHeight(45);
@@ -151,7 +188,6 @@ public class View extends Application
     notAllowed.setFont(Font.font("Arial Red", FontWeight.BLACK, 20));
     notAllowed.setTextAlignment(TextAlignment.RIGHT);
     notAllowed.setFill(Color.valueOf("#e60000"));
-    notAllowed.setText("Acs");
 
     footer.getChildren().add(footerDesc);
     footer2.getChildren().add(notAllowed);
@@ -171,42 +207,67 @@ public class View extends Application
     vbox.setMargin(footer2, new Insets(0, 10, 40, 10));
   }
 
+  /*
   private void handleClick(MouseEvent event)
   {
-    //if (event.getEventType() == MouseEvent.MOUSE_CLICKED)
     Node node = (Node) event.getSource();
 
-    paintToggle(node);
+    //paintToggle(node);
+    System.out.println("?");
   }
+  */
 
 
   private void handleDetected(MouseEvent event)
   {
     Node node = (Node) event.getSource();
     node.startFullDrag();
+    startStack(node);
     paint(node);
-    Controller.startDraggedStr(node.getId());
+
+    startNode = node;
   }
 
   private void handleDragOver(MouseEvent event)
   {
+    if (event.getX() < 7 || event.getY() < 7 || event.getX() > 33 || event.getY() > 33) return;
+
     Node node = (Node) event.getSource();
-    if(event.getX() < 7 || event.getY() < 7 || event.getX() > 33 || event.getY() > 33) return;
+    addNode(node);
     paint(node);
-    Controller.putDraggedStr(node.getId());
   }
 
   private void handleReleased(MouseEvent event)
   {
     Node node = (Node) event.getSource();
-    paint(node);
-    Controller.putDraggedStr(node.getId());
-    Controller.checkWord(Controller.draggedStr);
+    if (!(event.getX() < 7 || event.getY() < 7 || event.getX() > 33 || event.getY() > 33))
+    {
+      addNode(node);
+      paint(node);
+    }
+
+    removeAllPaint();
+    flipWord(draggedWord);
+
+    if (!(startNode.equals(node) || draggedWord.length() < 3)) evaluateWord(draggedWord);
+
+    draggedWord = "";
   }
 
   private static void paint(Node node)
   {
     node.setEffect(new SepiaTone());
+  }
+
+  private static void removeAllPaint()
+  {
+    for (int i = stacked.size() - 1; i >= 0; i--)
+    {
+      Node tmp = stacked.pop();
+      tmp.setEffect(null);
+
+      draggedWord += tmp.getId();
+    }
   }
 
   private static void paintToggle(Node node)
@@ -215,7 +276,64 @@ public class View extends Application
     else node.setEffect(new SepiaTone());
   }
 
+  private static void startStack(Node node)
+  {
+    stacked.add(node);
+  }
 
+  private static void addNode(Node node)
+  {
+    if (!stacked.lastElement().equals(node))
+    {
+      stacked.add(node);
+    }
+  }
+
+  private static void flipWord(String s)
+  {
+    String flipped = "";
+
+    for (int i = s.length() - 1; i > 0; i--)
+    {
+      flipped += s.substring(i, i + 1);
+      if (i == 1) flipped += s.substring(0, 1);
+    }
+
+    draggedWord = flipped;
+  }
+
+  private static void evaluateWord(String s)
+  {
+    if (Controller.findWord(s.toLowerCase()))
+    {
+      ArrayList<String> wl = Controller.getWordList();
+      if (wl.contains(s)) return;
+      else Controller.addWordList(s);
+
+      Controller.setScore(s);
+      scoreV.setText(Integer.toString(Controller.getScore()));
+
+      System.out.println("Found " + s + "! Score is " + Controller.getScore() + "\n");
+    }
+    else
+    {
+      Text tmpNotAllowed = new Text(s + " ");
+      tmpNotAllowed.setFont(notAllowed.getFont());
+      tmpNotAllowed.setFill(notAllowed.getFill());
+      footer2.getChildren().add(tmpNotAllowed);
+
+
+      Double tmp = footer2.getChildren().get(footer2.getChildren().size()-1).getLayoutX();
+      System.out.println("!!!!! " + tmp);
+
+      if (tmp > WINDOW_WIDTH)
+      {
+        Text deliminator = new Text("\n");
+        footer2.getChildren().add(deliminator);
+      }
+    }
+
+  }
 
   public void setView(String[] args)
   {
